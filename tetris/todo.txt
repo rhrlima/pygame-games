@@ -1,10 +1,19 @@
-[ ] criar peças
+[X] criar peças
 [X] rotacionar
 [X] colisao com campo
 [X] colisao com peças
 [X] cair automaticamente
+[X] efeito tetris
+[X] velocidade do jogo
+[X] próxima peça
+[X] segurar peça
+[X] pontos
+[X] segurar, verificar colisao
 [ ] cair totalmente
-[ ] efeito tetris
-[ ] velocidade do jogo
-[ ] pontos
-[ ] segurar peça
+[ ] ajustar peça ao rotacionar/trocar
+[ ] otimizações
+[ ] tela game over
+[ ] tela inicio
+[ ] animações
+[ ] sons
+[ ] multiplicadores
