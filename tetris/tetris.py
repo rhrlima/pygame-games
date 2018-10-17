@@ -83,7 +83,9 @@ class TetrisGame(base.Game):
 
 	font = None
 
+	game_start = True
 	game_over = False
+	paused = True
 
 	last_update = 0
 	active_piece = None
@@ -94,7 +96,7 @@ class TetrisGame(base.Game):
 
 	def setup(self):
 		super(TetrisGame, self).setup()
-		pg.display.set_caption('Tetris')
+		pg.display.set_caption('Pygame Tetris')
 
 		#setting key repeat frequency (delay, interval)
 		pg.key.set_repeat(DELAY, INTER)
@@ -113,26 +115,35 @@ class TetrisGame(base.Game):
 			self.running = False
 
 		if event.type == KEYDOWN:
+
 			if event.key == K_ESCAPE:
 				self.running = False
 
-			elif event.key == K_SPACE:
-				self.hold_piece()
+			elif event.key == K_RETURN:
+				self.paused = not self.paused
 
-			elif event.key == K_UP:
-				self.active_piece.rotate()
-				if self.collides():
+			if not self.paused:
+				if event.key == K_UP:
 					self.active_piece.rotate()
-					self.active_piece.rotate()
-					self.active_piece.rotate()
-			elif event.key == K_DOWN:  self.try_move( 0, 1)
-			elif event.key == K_LEFT:  self.try_move(-1, 0)
-			elif event.key == K_RIGHT: self.try_move( 1, 0)
+					if self.collides():
+						self.active_piece.rotate()
+						self.active_piece.rotate()
+						self.active_piece.rotate()
+				elif event.key == K_DOWN:  self.try_move( 0, 1)
+				elif event.key == K_LEFT:  self.try_move(-1, 0)
+				elif event.key == K_RIGHT: self.try_move( 1, 0)
+				elif event.key == K_SPACE: self.hold_piece()
 
 	def draw(self):
 
-		self.text = self.font.render('{:0>9}'.format(self.points), False, WHITE)
-		self.surface.blit(self.text, (200, 4) )
+		if self.paused:
+			text = self.font.render('PRESS ENTER', False, WHITE)
+			x = FIELD_W*BLOCK_SIZE/2 - text.get_rect().width/2
+			y = (FIELD_H-2)*BLOCK_SIZE/2 - text.get_rect().height/2
+			self.surface.blit(text, (x, y))
+
+		text = self.font.render('{:0>9}'.format(self.points), False, WHITE)
+		self.surface.blit(text, (200, 4))
 
 		self.field.draw(self.surface)
 		self.active_piece.draw(self.surface)
@@ -151,6 +162,9 @@ class TetrisGame(base.Game):
 		pg.draw.rect(self.surface, WHITE, r, 1)
 
 	def update(self, time):
+
+		if self.paused:
+			return
 
 		if self.game_over:
 			print('GAME OVER')
@@ -199,7 +213,7 @@ class TetrisGame(base.Game):
 					[0, 0, 0, 0, 8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0]]
 			w = 4; h =4
 
-		x = 4; y = -2
+		x = 5; y = -2
 		if next_piece:
 			x = 13; y = 2
 		return Tetromino(tiles, x, y, w, h)
