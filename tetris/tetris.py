@@ -82,17 +82,18 @@ class TetrisGame(base.Game):
 	WINDOW_HEIGHT = 304  # 19 blocks 
 
 	font = None
+	last_update = 0
 
 	game_start = True
 	game_over = False
 	paused = True
 
-	last_update = 0
 	active_piece = None
 	next_piece = None
 	holding = None
 
 	points = 0
+	multiplier = 0
 
 	def setup(self):
 		super(TetrisGame, self).setup()
@@ -103,11 +104,22 @@ class TetrisGame(base.Game):
 
 		self.font = pg.font.Font('resources/fonts/base.ttf', 16)
 
-		self.active_piece 	= self.create_piece(next_piece=False)
+		self.reset_game()
+
+	def reset_game(self):
+		self.points = 0
+		self.multiplier = 0
+
+		self.active_piece = self.create_piece(next_piece=False)
 		self.next_piece = self.create_piece()
+		self.holding = None
 
 		f = create_field(FIELD_W, FIELD_H)
 		self.field = Tetromino(f, 0, -2, FIELD_W, FIELD_H)
+
+		self.game_start = True
+		self.paused = True
+		self.game_over = False
 
 	def event(self, event):
 
@@ -117,10 +129,15 @@ class TetrisGame(base.Game):
 		if event.type == KEYDOWN:
 
 			if event.key == K_ESCAPE:
-				self.running = False
+				#self.running = False
+				self.reset_game()
 
 			elif event.key == K_RETURN:
 				self.paused = not self.paused
+				if self.game_start:
+					self.game_start = False
+				if self.game_over:
+					self.reset_game()
 
 			if not self.paused:
 				if event.key == K_UP:
@@ -135,12 +152,6 @@ class TetrisGame(base.Game):
 				elif event.key == K_SPACE: self.hold_piece()
 
 	def draw(self):
-
-		if self.paused:
-			text = self.font.render('PRESS ENTER', False, WHITE)
-			x = FIELD_W*BLOCK_SIZE/2 - text.get_rect().width/2
-			y = (FIELD_H-2)*BLOCK_SIZE/2 - text.get_rect().height/2
-			self.surface.blit(text, (x, y))
 
 		text = self.font.render('{:0>9}'.format(self.points), False, WHITE)
 		self.surface.blit(text, (200, 4))
@@ -161,22 +172,34 @@ class TetrisGame(base.Game):
 		r = Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE*4, BLOCK_SIZE*4)
 		pg.draw.rect(self.surface, WHITE, r, 1)
 
+		if self.paused:
+
+			if self.game_start:
+				self.draw_text(self.surface, 'PYGAME TETRIS', 6, 8, RED)
+				self.draw_text(self.surface, 'PRESS ENTER', 6, 9)
+			else:
+				self.draw_text(self.surface, 'PAUSED', 6, 9)
+
+			if self.game_over:
+				self.draw_text(self.surface, 'GAME OVER', 6, 8)
+				self.draw_text(self.surface, 'PRESS ENTER', 6, 9)
+
 	def update(self, time):
 
-		if self.paused:
+		if self.paused or self.game_over:
 			return
 
-		if self.game_over:
-			print('GAME OVER')
-			self.running = False
+		#if self.game_over:
+			#print('GAME OVER')
+			#self.running = False
 			# go to game over scene
 
 		self.last_update += time / self.FPS
 		mov_speed = (1 / GAME_SPEED) * self.FPS
 		if self.last_update >= mov_speed:
 			self.last_update = 0
-			self.try_move_or_place()
-			self.check_tetris()
+			placed = self.try_move_or_place()
+			self.check_tetris(placed)
 			self.check_game_over()
 
 	def create_piece(self, piece_name=None, next_piece=True):
@@ -213,7 +236,7 @@ class TetrisGame(base.Game):
 					[0, 0, 0, 0, 8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0]]
 			w = 4; h =4
 
-		x = 5; y = -2
+		x = 5; y = -4
 		if next_piece:
 			x = 13; y = 2
 		return Tetromino(tiles, x, y, w, h)
@@ -292,8 +315,11 @@ class TetrisGame(base.Game):
 									f_index = f_row * field.w + f_col
 									field.matrix[f_index] = pv
 			self.get_next_piece()
+			return True # placed
+		return False
 
-	def check_tetris(self):
+	def check_tetris(self, placed):
+
 		tetris = [True] * (self.field.h-1)
 		for row in range(0, self.field.h-1):
 			for col in range(1, self.field.w-1):
@@ -301,9 +327,7 @@ class TetrisGame(base.Game):
 				if self.field.matrix[index] == 0:
 					tetris[row] = False
 					break
-
 		tetris_count = sum(tetris)
-		self.add_points(100 * tetris_count)
 		
 		for row in range(0, self.field.h-1):
 			if tetris[row]:
@@ -312,9 +336,19 @@ class TetrisGame(base.Game):
 				new_line = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9]
 				self.field.matrix = new_line + self.field.matrix
 
+		if placed and tetris_count > 0:
+			base_points = 100 * tetris_count
+			bonus_points = 50 * self.multiplier
+			self.add_points(base_points + bonus_points)
+			self.multiplier += 1
+
+		elif placed and tetris_count == 0:
+			self.multiplier = 0
+
 	def check_game_over(self):
 		if sum(self.field.matrix[1:11]) > 0:
 			self.game_over = True
+			self.paused = True
 
 	def add_points(self, amount):
 		global GAME_SPEED
@@ -344,6 +378,11 @@ class TetrisGame(base.Game):
 
 		self.points += amount
 
+	def draw_text(self, surface, text, x, y, color=WHITE):
+		t = self.font.render(text, False, color)
+		x = (x * BLOCK_SIZE) - t.get_rect().width/2
+		y = (y * BLOCK_SIZE) + 2#/2 - t.get_rect().height/2
+		surface.blit(t, (x, y))
 
 if __name__ == '__main__':
 	

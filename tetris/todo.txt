@@ -9,11 +9,14 @@
 [X] segurar peça
 [X] pontos
 [X] segurar, verificar colisao
+[X] tela inicio
+[X] pausar
 [ ] cair totalmente
-[ ] ajustar peça ao rotacionar/trocar
+[ ] ajustar peça ao rotacionar
+[ ] ajustar peça ao trocar
 [ ] otimizações
-[ ] tela game over
-[ ] tela inicio
+[X] tela game over
 [ ] animações
 [ ] sons
-[ ] multiplicadores
+[X] resetar jogo
+[X] multiplicadores
