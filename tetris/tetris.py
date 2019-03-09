@@ -82,6 +82,7 @@ class TetrisGame(base.Game):
 	WINDOW_HEIGHT = 304  # 19 blocks 
 
 	font = None
+	sounds = {}
 	last_update = 0
 
 	game_start = True
@@ -102,7 +103,14 @@ class TetrisGame(base.Game):
 		#setting key repeat frequency (delay, interval)
 		pg.key.set_repeat(DELAY, INTER)
 
+		# font
 		self.font = pg.font.Font('resources/fonts/base.ttf', 16)
+
+		# sounds
+		sounds_list = ['fall.wav', 'line.wav', 'gameover.wav']
+		for s in sounds_list:
+			folder = 'resources/sounds/'
+			self.sounds[s] = pg.mixer.Sound(os.path.join(folder, s))
 
 		self.reset_game()
 
@@ -129,10 +137,10 @@ class TetrisGame(base.Game):
 		if event.type == KEYDOWN:
 
 			if event.key == K_ESCAPE:
-				#self.running = False
 				self.reset_game()
 
 			elif event.key == K_RETURN:
+				self.play_sound('line.wav')
 				self.paused = not self.paused
 				if self.game_start:
 					self.game_start = False
@@ -177,22 +185,16 @@ class TetrisGame(base.Game):
 			if self.game_start:
 				self.draw_text(self.surface, 'PYGAME TETRIS', 6, 8, RED)
 				self.draw_text(self.surface, 'PRESS ENTER', 6, 9)
-			else:
-				self.draw_text(self.surface, 'PAUSED', 6, 9)
-
-			if self.game_over:
+			elif self.game_over:
 				self.draw_text(self.surface, 'GAME OVER', 6, 8)
 				self.draw_text(self.surface, 'PRESS ENTER', 6, 9)
-
+			else:
+				self.draw_text(self.surface, 'PAUSED', 6, 9)
+			
 	def update(self, time):
 
 		if self.paused or self.game_over:
 			return
-
-		#if self.game_over:
-			#print('GAME OVER')
-			#self.running = False
-			# go to game over scene
 
 		self.last_update += time / self.FPS
 		mov_speed = (1 / GAME_SPEED) * self.FPS
@@ -295,6 +297,7 @@ class TetrisGame(base.Game):
 		# move down
 		self.active_piece.y += 1
 		if self.collides():
+			self.play_sound('fall.wav')
 			self.active_piece.y -= 1
 		
 			# place the active_piece piece into the field
@@ -331,6 +334,7 @@ class TetrisGame(base.Game):
 		
 		for row in range(0, self.field.h-1):
 			if tetris[row]:
+				self.play_sound('line.wav')
 				index = row * self.field.w
 				del self.field.matrix[index:index + self.field.w]
 				new_line = [9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9]
@@ -347,6 +351,7 @@ class TetrisGame(base.Game):
 
 	def check_game_over(self):
 		if sum(self.field.matrix[1:11]) > 0:
+			self.play_sound('gameover')
 			self.game_over = True
 			self.paused = True
 
@@ -383,6 +388,10 @@ class TetrisGame(base.Game):
 		x = (x * BLOCK_SIZE) - t.get_rect().width/2
 		y = (y * BLOCK_SIZE) + 2#/2 - t.get_rect().height/2
 		surface.blit(t, (x, y))
+
+	def play_sound(self, key):
+
+		self.sounds[key].play()
 
 if __name__ == '__main__':
 	
