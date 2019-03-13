@@ -97,10 +97,15 @@ class TetrisGame(base.Game):
 	multiplier = 0
 
 	def setup(self):
+
+		# remove audio delay
+		pg.mixer.pre_init(22050, -16, 2, 1024)
+
 		super(TetrisGame, self).setup()
+
 		pg.display.set_caption('Pygame Tetris')
 
-		#setting key repeat frequency (delay, interval)
+		# setting key repeat frequency (delay, interval)
 		pg.key.set_repeat(DELAY, INTER)
 
 		# font
@@ -351,7 +356,7 @@ class TetrisGame(base.Game):
 
 	def check_game_over(self):
 		if sum(self.field.matrix[1:11]) > 0:
-			self.play_sound('gameover')
+			self.play_sound('gameover.wav')
 			self.game_over = True
 			self.paused = True
 
